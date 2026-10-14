@@ -16,12 +16,12 @@ WatchFace({
 
   build() {
     // 1. CRT Canvas Background
-    createWidget(widget.FILL_RECT, {
+    createWidget(widget.IMG, {
       x: 0,
       y: 0,
       w: 480,
       h: 480,
-      color: 0x000000
+      src: 'bg.png'
     })
 
     // 2. HUD Framing Elements
@@ -59,6 +59,7 @@ WatchFace({
       text_size: 18,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
+      font: 'fonts/monofonto.ttf',
       text: 'VAULT-TEC // STAT'
     })
 
@@ -72,6 +73,7 @@ WatchFace({
       text_size: 68,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
+      font: 'fonts/monofonto.ttf',
       text: '--:--'
     })
 
@@ -85,6 +87,7 @@ WatchFace({
       text_size: 18,
       align_h: align.LEFT,
       align_v: align.CENTER_V,
+      font: 'fonts/monofonto.ttf',
       text: 'RADS: -- BPM'
     })
 
@@ -98,6 +101,7 @@ WatchFace({
       text_size: 18,
       align_h: align.RIGHT,
       align_v: align.CENTER_V,
+      font: 'fonts/monofonto.ttf',
       text: 'AP: ----'
     })
 
@@ -120,6 +124,7 @@ WatchFace({
       text_size: 20,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
+      font: 'fonts/monofonto.ttf',
       text: 'DATE: --'
     })
 
@@ -133,6 +138,7 @@ WatchFace({
       text_size: 19,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
+      font: 'fonts/monofonto.ttf',
       text: 'CORE: --%'
     })
 
@@ -146,6 +152,7 @@ WatchFace({
       text_size: 14,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
+      font: 'fonts/monofonto.ttf',
       text: '[ COND: NORMAL // HP: 100% ]'
     })
 
