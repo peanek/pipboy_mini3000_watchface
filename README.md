@@ -54,4 +54,4 @@ Pose 7 (Combat / High BPM): Heart Rate > 100 BPM (vault_boy_7.png)
 Pose 8 (high / on drugs - like psycho or jet)) > PAI more than 130 -> 170 x 129
 
 
-TBC
+to be considered into chnage
