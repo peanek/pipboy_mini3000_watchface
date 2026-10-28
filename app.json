@@ -10,12 +10,17 @@
     },
     "icon": "icon.png",
     "vender": "ppeczkowski.pl",
-    "description": "Vault-Tec Pip-Boy 3000 Watchface"
+    "description": "Fallout Pip-Boy mini 3000 Watchface"
   },
   "permissions": [
     "data:user.hd.step",
     "data:user.hd.heart_rate",
-    "device:os.local_storage"
+    "data:user.hd.stress",
+    "data:user.hd.sleep",
+    "data:user.hd.pai",
+    "data:user.hd.fat_burning",
+    "data:user.hd.calorie",
+    "data:user.hd.weather"
   ],
   "runtime": {
     "apiVersion": {
@@ -25,12 +30,12 @@
     }
   },
   "targets": {
-    "480x480-amazfit-t-rex-3": {
+    "480x480-amazfit-t-rex-3-pro-48-mm": {
       "module": {
         "watchface": {
           "path": "watchface/index",
           "main": 1,
-          "editable": 0,
+          "editable": 1,
           "lockscreen": 0,
           "hightCost": 0
         }
@@ -47,21 +52,7 @@
         {
           "name": "MatterhornW",
           "deviceSource": 8716547
-        }
-      ],
-      "designWidth": 480
-    },
-    "480x480-amazfit-t-rex-3-pro-48-mm": {
-      "module": {
-        "watchface": {
-          "path": "watchface/index",
-          "main": 1,
-          "editable": 0,
-          "lockscreen": 0,
-          "hightCost": 0
-        }
-      },
-      "platforms": [
+        },
         {
           "name": "Rocky",
           "deviceSource": 10551552
@@ -73,6 +64,18 @@
         {
           "name": "RockyW",
           "deviceSource": 10551555
+        },
+        {
+          "name": "Balance",
+          "deviceSource": 8519936
+        },
+        {
+          "name": "BalanceW",
+          "deviceSource": 8519937
+        },
+        {
+          "name": "BalanceWN",
+          "deviceSource": 8519939
         }
       ],
       "designWidth": 480
