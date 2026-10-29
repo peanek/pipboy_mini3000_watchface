@@ -1,4 +1,4 @@
-import { createWidget, widget, prop, show_level, align, data_type, anim_status } from '@zos/ui'
+import { createWidget, widget, prop, show_level, align } from '@zos/ui'
 import { Time, Battery, Step, HeartRate, Stress, Sleep, Pai, Calorie, FatBurning, Weather } from '@zos/sensor'
 
 const ROOT_IMAGES_PATH = 'images/'
@@ -55,14 +55,14 @@ const WEATHER_STATUS = [
   'NO-SYNC'    // 28: Unknown
 ]
 
-// Reusable helper for the 5 Pip-Boy limb gauges (Upgraded font sizes)
+// Reusable helper for the 5 Pip-Boy limb gauges
 const createLimbGauge = (label, x, y, initialText = '0') => {
   const boxW = 64
   const barX = x + 7
-  const barY = y + 22
+  const barY = y + 20
   const fillX = x + 8
-  const fillY = y + 23
-  const textY = y + 32
+  const fillY = y + 21
+  const textY = y + 30
 
   createWidget(widget.TEXT, {
     x: x,
@@ -133,7 +133,7 @@ const createLimbGauge = (label, x, y, initialText = '0') => {
 
 WatchFace({
   onInit() {
-    console.log('Pip-Boy Mini-3000: Ready for Deployment')
+    console.log('Pip-Boy Mini-3000: Dual-Container Terminal Layout Initialized')
   },
 
   build() {
@@ -149,8 +149,19 @@ WatchFace({
     const calorieSensor = initSensor(Calorie)
     const fatBurnSensor = initSensor(FatBurning)
 
-    // 1. Background Switcher
-    const editBg = createWidget(widget.WATCHFACE_EDIT_BG, {
+    // =========================================================================
+    // MASTER LAYOUT ANCHORS (Shifted left to x: 56 for clean container framing)
+    // =========================================================================
+    const LEFT_COL_X = 62   // Shifted 6px right for cleaner breathing room
+    const LEFT_COL_W = 96   // Uniform width (96px) for Date/Weather/PWR modules
+    const FRAME_RIGHT_X = 168 // Right vertical wall X coordinate
+    const FRAME_COLOR = 0x009900 // Darker retro CRT green for structural lines & labels
+
+    const VB_X = 248        // Vault Boy X position (Right side)
+    const VB_Y = 148        // Vault Boy Y position
+
+    // 1. Background Switcher (Renders background in Normal Mode & Picker in Edit Mode)
+    createWidget(widget.WATCHFACE_EDIT_BG, {
       edit_id: 123,
       x: 0,
       y: 0,
@@ -159,53 +170,35 @@ WatchFace({
       bg_config: [
         {
           id: 1,
-          preview: `${ROOT_IMAGES_PATH}bg/bg_variant_01.png`,
-          path: `${ROOT_IMAGES_PATH}bg/bg_variant_01.png`
+          preview: `${ROOT_IMAGES_PATH}bg/bg_01.png`,
+          path: `${ROOT_IMAGES_PATH}bg/bg_01.png`
         },
         {
           id: 2,
-          preview: `${ROOT_IMAGES_PATH}bg/bg_variant_02.png`,
-          path: `${ROOT_IMAGES_PATH}bg/bg_variant_02.png`
+          preview: `${ROOT_IMAGES_PATH}bg/bg_02.png`,
+          path: `${ROOT_IMAGES_PATH}bg/bg_02.png`
         },
         {
           id: 3,
-          preview: `${ROOT_IMAGES_PATH}bg/bg_variant_03.png`,
-          path: `${ROOT_IMAGES_PATH}bg/bg_variant_03.png`
+          preview: `${ROOT_IMAGES_PATH}bg/bg_03.png`,
+          path: `${ROOT_IMAGES_PATH}bg/bg_03.png`
         },
         {
           id: 4,
-          preview: `${ROOT_IMAGES_PATH}bg/bg_variant_04.png`,
-          path: `${ROOT_IMAGES_PATH}bg/bg_variant_04.png`
-        },
-        {
-          id: 5,
-          preview: `${ROOT_IMAGES_PATH}bg/bg_variant_05.png`,
-          path: `${ROOT_IMAGES_PATH}bg/bg_variant_05.png`
+          preview: `${ROOT_IMAGES_PATH}bg/bg_04.png`,
+          path: `${ROOT_IMAGES_PATH}bg/bg_04.png`
         }
       ],
-      count: 5,
-      default_id: 1,
-      tips_x: 170,
-      tips_y: 400,
-      // fg: `${ROOT_IMAGES_PATH}vault_boy/vault_boy_01.png`,
-      // tips_bg: `${ROOT_IMAGES_PATH}vault_boy/vault_boy_01.png`
-      fg: `${ROOT_IMAGES_PATH}bg/bg_variant_01.png`,
-      tips_bg: `${ROOT_IMAGES_PATH}bg/bg_variant_01.png`
+      count: 4,
+      default_id: 2,
+      fg: `${ROOT_IMAGES_PATH}bg/mask.png`,
+      tips_x: 180,
+      tips_y: 425,
+      tips_bg: `${ROOT_IMAGES_PATH}bg/tips.png`,
+      show_level: show_level.ONLY_NORMAL | show_level.ONLY_EDIT
     })
 
-    const selectedBgType = editBg.getProperty(prop.CURRENT_TYPE) || 1
-    const bgSrc = `${ROOT_IMAGES_PATH}bg/bg_variant_0${selectedBgType}.png`
-
-    createWidget(widget.IMG, {
-      x: 0,
-      y: 0,
-      w: 480,
-      h: 480,
-      src: bgSrc,
-      show_level: show_level.ONLY_NORMAL
-    })
-
-    // 1.1 Top & Bottom Logos with auto_scale: true
+    // 1.1 Top & Bottom Logos
     createWidget(widget.IMG, {
       x: 170,
       y: 12,
@@ -226,26 +219,84 @@ WatchFace({
       show_level: show_level.ONLY_NORMAL
     })
 
-    // 2. Vault Boy Mascot
+    // =========================================================================
+    // RIGHT SIDE: VAULT BOY MASCOT + 5 TIGHT LIMB TELEMETRY GAUGES
+    // =========================================================================
     const vaultBoyWidget = createWidget(widget.IMG, {
-      x: 180,
-      y: 142,
+      x: VB_X,
+      y: VB_Y,
       w: 130,
       h: 170,
       src: `${ROOT_IMAGES_PATH}vault_boy/vault_boy_01.png`,
       show_level: show_level.ONLY_NORMAL
     })
 
-    // 3. Time Display (Aligned at x: 22, 92px font)
+    // All 5 gauges are anchored tightly around Vault Boy (VB_X, VB_Y)
+    const stressGauge = createLimbGauge('STRESS', VB_X + 28, VB_Y - 58, '0')  // Head
+    const calGauge    = createLimbGauge('CAL',    VB_X - 56, VB_Y + 42, '0')  // Left Arm
+    const bpmGauge    = createLimbGauge('BPM',    VB_X + 118, VB_Y + 42, '--')// Right Arm
+    const stepsGauge  = createLimbGauge('STEPS',  VB_X - 18, VB_Y + 170, '0') // Left Leg
+    const paiGauge    = createLimbGauge('PAI',    VB_X + 74, VB_Y + 170, '0') // Right Leg
+
+    // =========================================================================
+    // LEFT SIDE: TOP CONTAINER [TIME] (Aligned Outer Lines + Extended Inner Wing)
+    // =========================================================================
+
+    // TIME Container - Line 1: Top Horizontal Line (Aligned at x: 62, matching bottom DATA line)
+    createWidget(widget.FILL_RECT, {
+      x: LEFT_COL_X + 20,
+      y: 72,
+      w: FRAME_RIGHT_X - LEFT_COL_X - 18,
+      h: 2,
+      color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // TIME Container - Line 2: Right Vertical Wall
+    createWidget(widget.FILL_RECT, {
+      x: FRAME_RIGHT_X,
+      y: 72,
+      w: 2,
+      h: 142, // Runs down to y: 214
+      color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // TIME Container - Line 3: Bottom Horizontal Line (Extended to x: 12, ~5px from bezel edge!)
+    createWidget(widget.FILL_RECT, {
+      x: 12,
+      y: 212,
+      w: FRAME_RIGHT_X - 12 + 2,
+      h: 2,
+      color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 'TIME' Label: Moved to the newly opened far-left wing above the line!
+    createWidget(widget.TEXT, {
+      x: 16,
+      y: 194,
+      w: 42,
+      h: 16,
+      color: FRAME_COLOR,
+      text_size: 12,
+      align_h: align.LEFT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: 'TIME',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 3. Time Display (Shifted right with LEFT_COL_X = 62)
     const hourWidget = createWidget(widget.TEXT, {
-      x: 22,
-      y: 148,
-      w: 100,
-      h: 92,
+      x: LEFT_COL_X,
+      y: 76,
+      w: LEFT_COL_W,
+      h: 66,
       color: 0x39ff14,
-      text_size: 92,
+      text_size: 80,
       bold: true,
-      align_h: align.CENTER_H,
+      align_h: align.LEFT,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
       text: '--',
@@ -253,12 +304,37 @@ WatchFace({
     })
 
     const minuteWidget = createWidget(widget.TEXT, {
-      x: 22,
-      y: 232,
-      w: 100,
-      h: 92,
+      x: LEFT_COL_X,
+      y: 140,
+      w: LEFT_COL_W,
+      h: 66,
       color: 0x39ff14,
-      text_size: 92,
+      text_size: 80,
+      bold: true,
+      align_h: align.LEFT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: '--',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // Smaller Seconds Box Background (26x20 instead of 32x24, tucked at x: 136)
+    createWidget(widget.FILL_RECT, {
+      x: 136,
+      y: 182,
+      w: 26,
+      h: 20,
+      color: 0x39ff14,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    const secondWidget = createWidget(widget.TEXT, {
+      x: 136,
+      y: 182,
+      w: 26,
+      h: 20,
+      color: 0x000000,
+      text_size: 16,
       bold: true,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
@@ -267,23 +343,74 @@ WatchFace({
       show_level: show_level.ONLY_NORMAL
     })
 
-    // 4. Bottom-Right Date Module: [MONDAY] Badge + Larger DD.MM below it
+    // =========================================================================
+    // LEFT SIDE: BOTTOM CONTAINER [DATA] (Extended Top Wing + Aligned Bottom Line)
+    // =========================================================================
+
+    // DATA Container - Line 1: Top Horizontal Line (Extended to x: 12, ~5px from bezel edge!)
     createWidget(widget.FILL_RECT, {
-      x: 326,
-      y: 358,
-      w: 82,
+      x: 12,
+      y: 220,
+      w: FRAME_RIGHT_X - 12 + 2,
+      h: 2,
+      color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // DATA Container - Line 2: Right Vertical Wall
+    createWidget(widget.FILL_RECT, {
+      x: FRAME_RIGHT_X,
+      y: 220,
+      w: 2,
+      h: 178, // Runs down to y: 398
+      color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // DATA Container - Line 3: Bottom Horizontal Line (Aligned at x: 62, matching top TIME line)
+    createWidget(widget.FILL_RECT, {
+      x: LEFT_COL_X + 8,
+      y: 396,
+      w: FRAME_RIGHT_X - LEFT_COL_X - 6,
+      h: 2,
+      color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 'DATA' Label: Moved to the far-left wing right below the top DATA line!
+    createWidget(widget.TEXT, {
+      x: 16,
+      y: 224,
+      w: 42,
+      h: 16,
+      color: FRAME_COLOR,
+      text_size: 12,
+      align_h: align.LEFT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: 'DATA',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 4. Date Module Inside DATA Container (Width: 96px)
+    const DATA_Y_MODULE_HELPER = 228 // start Y position for data modules, helper
+
+    createWidget(widget.FILL_RECT, {
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER,
+      w: LEFT_COL_W,
       h: 18,
       color: 0x39ff14,
       show_level: show_level.ONLY_NORMAL
     })
 
     const dayWidget = createWidget(widget.TEXT, {
-      x: 326,
-      y: 358,
-      w: 82,
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER,
+      w: LEFT_COL_W,
       h: 18,
       color: 0x000000,
-      text_size: 16,
+      text_size: 18,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -292,12 +419,12 @@ WatchFace({
     })
 
     const dateNumWidget = createWidget(widget.TEXT, {
-      x: 326,
-      y: 378,
-      w: 82,
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 19,
+      w: LEFT_COL_W,
       h: 24,
       color: 0x39ff14,
-      text_size: 25,
+      text_size: 24,
       bold: true,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
@@ -306,30 +433,94 @@ WatchFace({
       show_level: show_level.ONLY_NORMAL
     })
 
-    // 5. Five Limb Telemetry Gauges
-    const stressGauge = createLimbGauge('STRESS', 206, 85, '0') // Head
-    const calGauge = createLimbGauge('CAL', 120, 192, '0')      // Left Arm
-    const bpmGauge = createLimbGauge('BPM', 300, 192, '--')     // Right Arm
-    const stepsGauge = createLimbGauge('STEPS', 161, 315, '0')  // Left Leg
-    const paiGauge = createLimbGauge('PAI', 260, 315, '0')      // Right Leg
-
-    // 6. Larger Lower-Left Corner Power Meter
+    // 5. Weather Module Inside DATA Container (Enlarged fonts & stacked spacing)
     createWidget(widget.FILL_RECT, {
-      x: 72,
-      y: 358,
-      w: 38,
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 47,
+      w: 48,
+      h: 20,
+      color: 0x39ff14,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    createWidget(widget.TEXT, {
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 47,
+      w: 48,
+      h: 20,
+      color: 0x000000,
+      text_size: 18,
+      bold: true,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: 'TEMP',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    const weatherTempWidget = createWidget(widget.TEXT, {
+      x: LEFT_COL_X + 50,
+      y: DATA_Y_MODULE_HELPER + 45,
+      w: LEFT_COL_W - 50,
+      h: 24,
+      color: 0x39ff14,
+      text_size: 24,
+      bold: true,
+      align_h: align.RIGHT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: '--°C',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    const weatherCondWidget = createWidget(widget.TEXT, {
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 71,
+      w: LEFT_COL_W,
+      h: 22,
+      color: 0x39ff14,
+      text_size: 22,
+      bold: true,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: 'NO-SYNC',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    const weatherRangeWidget = createWidget(widget.TEXT, {
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 95,
+      w: LEFT_COL_W,
+      h: 22,
+      color: 0x39ff14,
+      text_size: 22,
+      bold: true,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: '--°C/--°C',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 6. Power (PWR) Module at Bottom of DATA Container (Clean & perfectly spaced)
+    createWidget(widget.FILL_RECT, {
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 122,
+      w: 42,
       h: 18,
       color: 0x39ff14,
       show_level: show_level.ONLY_NORMAL
     })
 
     createWidget(widget.TEXT, {
-      x: 72,
-      y: 358,
-      w: 38,
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 122,
+      w: 42,
       h: 18,
       color: 0x000000,
-      text_size: 16,
+      text_size: 18,
+      bold: true,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -338,12 +529,12 @@ WatchFace({
     })
 
     const batteryTextWidget = createWidget(widget.TEXT, {
-      x: 112,
-      y: 355,
-      w: 42,
-      h: 24,
+      x: LEFT_COL_X + 44,
+      y: DATA_Y_MODULE_HELPER + 121,
+      w: LEFT_COL_W - 44,
+      h: 22,
       color: 0x39ff14,
-      text_size: 21,
+      text_size: 22,
       bold: true,
       align_h: align.RIGHT,
       align_v: align.CENTER_V,
@@ -353,115 +544,27 @@ WatchFace({
     })
 
     createWidget(widget.FILL_RECT, {
-      x: 71,
-      y: 379,
-      w: 80,
-      h: 11,
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 148,
+      w: LEFT_COL_W,
+      h: 10,
       color: 0x003300,
       show_level: show_level.ONLY_NORMAL
     })
 
     const batteryBarFill = createWidget(widget.FILL_RECT, {
-      x: 72,
-      y: 380,
-      w: 80,
+      x: LEFT_COL_X + 1,
+      y: DATA_Y_MODULE_HELPER + 148,
+      w: LEFT_COL_W - 2,
       h: 8,
       color: 0x39ff14,
       show_level: show_level.ONLY_NORMAL
     })
 
-    // 7. Top-Right Weather Module: [TEMP] 15°C + Condition + Range
-    createWidget(widget.FILL_RECT, {
-      x: 318,
-      y: 82,
-      w: 48,
-      h: 18,
-      color: 0x39ff14,
-      show_level: show_level.ONLY_NORMAL
-    })
-
-    createWidget(widget.TEXT, {
-      x: 318,
-      y: 82,
-      w: 48,
-      h: 18,
-      color: 0x000000,
-      text_size: 16,
-      align_h: align.CENTER_H,
-      align_v: align.CENTER_V,
-      font: PIPBOY_FONT,
-      text: 'TEMP',
-      show_level: show_level.ONLY_NORMAL
-    })
-
-    const weatherTempWidget = createWidget(widget.TEXT, {
-      x: 370,
-      y: 80,
-      w: 55,
-      h: 22,
-      color: 0x39ff14,
-      text_size: 18,
-      bold: true,
-      align_h: align.LEFT,
-      align_v: align.CENTER_V,
-      font: PIPBOY_FONT,
-      text: '--°C',
-      show_level: show_level.ONLY_NORMAL
-    })
-
-    const weatherCondWidget = createWidget(widget.TEXT, {
-      x: 318,
-      y: 103,
-      w: 105,
-      h: 18,
-      color: 0x39ff14,
-      text_size: 16,
-      align_h: align.LEFT,
-      align_v: align.CENTER_V,
-      font: PIPBOY_FONT,
-      text: 'NO-SYNC',
-      show_level: show_level.ONLY_NORMAL
-    })
-
-    const weatherRangeWidget = createWidget(widget.TEXT, {
-      x: 318,
-      y: 121,
-      w: 105,
-      h: 18,
-      color: 0x39ff14,
-      text_size: 16,
-      align_h: align.LEFT,
-      align_v: align.CENTER_V,
-      font: PIPBOY_FONT,
-      text: '--°C/--°C',
-      show_level: show_level.ONLY_NORMAL
-    })
-
-    // 8. Top-Left Vault 13 Door & Vault Boy Animation (70x70px at x: 52, y: 74)
-    // Wrapped in try/catch so even if an image frame is missing, telemetry still works!
-    let vaultAnim = null
-    try {
-      vaultAnim = createWidget(widget.IMG_ANIM, {
-        x: 85,
-        y: 70,
-        anim_path: `${ROOT_IMAGES_PATH}animations/vault_animation`,
-        anim_prefix: 'frame',
-        anim_ext: 'png',
-        anim_fps: 5,
-        anim_size: 8,
-        repeat_count: 1,
-        anim_repeat: false,
-        display_on_restart: 1,
-        anim_status: anim_status.START,
-        show_level: show_level.ONLY_NORMAL
-      })
-    } catch (e) {
-      console.log('Vault animation init error:', e)
-    }
-
     // --- State & Telemetry Caches ---
     let lastHourStr = ''
     let lastMinStr = ''
+    let lastSecStr = ''
     let lastDateStr = ''
     let lastBatteryLevel = -1
     let lastPoseId = 1
@@ -554,7 +657,6 @@ WatchFace({
       }
 
       // --- QUICK SIMULATOR MOCK OVERRIDES ---
-      // Uncomment any line below to force a constant test value:
       // pai = 135       // Forces PAI gauge to 135 & triggers Pose 8 (Psycho/Jet)
       // stress = 80     // Forces STRESS gauge to 80 & triggers Pose 4 (if PAI <= 130)
       // heartRate = 115 // Triggers Pose 7
@@ -632,7 +734,7 @@ WatchFace({
         targetPose = 4
       } else if (battery < 25) {
         targetPose = 3
-      } else if (sleepScore > 75) {
+      } else if (sleepScore > 80 && timeSensor.getHours() >= 6 && timeSensor.getHours() < 12) {
         targetPose = 2
       }
 
@@ -641,6 +743,14 @@ WatchFace({
         vaultBoyWidget.setProperty(prop.MORE, {
           src: `${ROOT_IMAGES_PATH}vault_boy/vault_boy_0${targetPose}.png`
         })
+      }
+    }
+
+    const updateSeconds = () => {
+      const secs = pad(timeSensor.getSeconds())
+      if (secs !== lastSecStr) {
+        lastSecStr = secs
+        secondWidget.setProperty(prop.MORE, { text: secs })
       }
     }
 
@@ -657,6 +767,8 @@ WatchFace({
         lastMinStr = mins
         minuteWidget.setProperty(prop.MORE, { text: mins })
       }
+
+      updateSeconds()
 
       const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
       const dayIdx = timeSensor.getDay ? timeSensor.getDay() % 7 : new Date().getDay()
@@ -684,12 +796,12 @@ WatchFace({
       if (level === lastBatteryLevel) return
       lastBatteryLevel = level
 
-      const maxWidth = 80
+      const maxWidth = LEFT_COL_W - 2
       const currentBarWidth = Math.max(1, Math.round((level / 100) * maxWidth))
 
       batteryBarFill.setProperty(prop.MORE, {
-        x: 72,
-        y: 380,
+        x: LEFT_COL_X + 1,
+        y: DATA_Y_MODULE_HELPER + 148,
         w: currentBarWidth,
         h: 8,
         color: 0x39ff14
@@ -704,23 +816,35 @@ WatchFace({
 
     const refreshAll = () => {
       updateTime()
+      updateSeconds()
       updateBattery()
       updateTelemetry()
     }
 
+    // Battery-safe 1-second timer (Only ticks while watch screen is awake!)
+    let secTimer = null
+    const startSecondTicker = () => {
+      if (secTimer) clearInterval(secTimer)
+      updateSeconds()
+      secTimer = setInterval(updateSeconds, 1000)
+    }
+    const stopSecondTicker = () => {
+      if (secTimer) {
+        clearInterval(secTimer)
+        secTimer = null
+      }
+    }
+
     refreshAll()
+    startSecondTicker()
 
     createWidget(widget.WIDGET_DELEGATE, {
       resume_call: () => {
         refreshAll()
-        try {
-          if (vaultAnim) {
-            vaultAnim.setProperty(prop.ANIM_STATUS, anim_status.STOP)
-            vaultAnim.setProperty(prop.ANIM_STATUS, anim_status.START)
-          }
-        } catch (e) {
-          console.log('Anim restart skipped:', e)
-        }
+        startSecondTicker()
+      },
+      pause_call: () => {
+        stopSecondTicker()
       }
     })
 
@@ -742,14 +866,17 @@ WatchFace({
     }
 
     this.sensors = { batterySensor, stepSensor, calorieSensor, hrSensor, stressSensor }
-    this.handlers = { updateBattery, updateTelemetry }
+    this.handlers = { updateBattery, updateTelemetry, stopSecondTicker }
   },
 
   onDestroy() {
     if (this.handlers && this.sensors) {
       const { batterySensor, stepSensor, calorieSensor, hrSensor, stressSensor } = this.sensors
-      const { updateBattery, updateTelemetry } = this.handlers
+      const { updateBattery, updateTelemetry, stopSecondTicker } = this.handlers
 
+      if (typeof stopSecondTicker === 'function') {
+        stopSecondTicker()
+      }
       if (batterySensor && typeof batterySensor.offChange === 'function') {
         batterySensor.offChange(updateBattery)
       }
