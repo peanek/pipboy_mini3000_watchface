@@ -1,8 +1,15 @@
-import { createWidget, widget, prop, show_level, align } from '@zos/ui'
+import { createWidget, widget, prop, show_level, align, data_type } from '@zos/ui'
 import { Time, Battery, Step, HeartRate, Stress, Sleep, Pai, Calorie, FatBurning, Weather } from '@zos/sensor'
 
 const ROOT_IMAGES_PATH = 'images/'
 const PIPBOY_FONT = 'fonts/gothic821.ttf'
+
+// Color Palette
+const GLOW_AMBIENT_IMG = `${ROOT_IMAGES_PATH}bg/glow_ambient.png`
+const FRAME_COLOR = 0x009900        // CRT structural outlines and labels
+const GLOW_CORE_COLOR = 0xD0FFAA    // Intense "hot core" for values (19, 51, 1000, 39, etc.)
+const GLOW_NEON_COLOR = 0x39FF14    // Native glowing green for secondary texts/badges
+
 const pad = (val) => (val < 10 ? `0${val}` : `${val}`)
 
 // Safe sensor initializer so missing permissions or unsupported sensors never crash build()
@@ -24,53 +31,65 @@ const toNumeric = (raw, fallback = 0) => {
 
 // Official Zepp OS Weather Index (0-28) lookup table
 const WEATHER_STATUS = [
-  'CLEAR',     // 0: Sunny
-  'CLOUDY',    // 1: Cloudy
-  'OVERCAST',  // 2: Overcast
-  'SHOWER',    // 3: Shower
-  'STORM',     // 4: Thundershower
-  'HAIL',      // 5: Hail
-  'SLEET',     // 6: Sleet
-  'LGT-RAIN',  // 7: Light rain
-  'MOD-RAIN',  // 8: Moderate rain
-  'HVY-RAIN',  // 9: Heavy rain
-  'DOWNPOUR',  // 10: Rainstorm
-  'TORRENT',   // 11: Heavy rainstorm
-  'SUPER-STRM',// 12: Extraordinary rainstorm
-  'SNOW-SHWR', // 13: Snow shower
-  'LGT-SNOW',  // 14: Light snow
-  'MOD-SNOW',  // 15: Moderate snow
-  'HVY-SNOW',  // 16: Heavy snow
-  'BLIZZARD',  // 17: Blizzard
-  'FOGGY',     // 18: Fog
-  'FREEZ-RAIN',// 19: Freezing rain
-  'DUST-STRM', // 20: Dust storm
-  'LGT-MOD-RN',// 21: Light to moderate rain
-  'MOD-HVY-RN',// 22: Moderate to heavy rain
-  'HVY-STORM', // 23: Heavy rain to rainstorm
-  'EXTR-STORM',// 24: Rainstorm to heavy rainstorm
-  'SUPER-RAIN',// 25: Heavy to extraordinary rainstorm
-  'LGT-MOD-SN',// 26: Light to moderate snow
-  'MOD-HVY-SN',// 27: Moderate to heavy snow
-  'NO-SYNC'    // 28: Unknown
+  'CLOUDY',     // 0: Cloudy
+  'SHOWER',     // 1: Shower
+  'SNOW-SHWR',  // 2: Snow shower
+  'CLEAR',      // 3: Sunny / Clear
+  'OVERCAST',   // 4: Overcast (Was previously mapped to STORM!)
+  'LGT-RAIN',   // 5: Light rain
+  'LGT-SNOW',   // 6: Light snow
+  'MOD-RAIN',   // 7: Moderate rain
+  'MOD-SNOW',   // 8: Moderate snow
+  'HVY-SNOW',   // 9: Heavy snow
+  'HVY-RAIN',   // 10: Heavy rain
+  'SANDSTORM',  // 11: Sandstorm
+  'SLEET',      // 12: Sleet
+  'FOGGY',      // 13: Fog
+  'HAZE',       // 14: Haze
+  'STORM',      // 15: Thundershower
+  'BLIZZARD',   // 16: Snowstorm
+  'DUST',       // 17: Dust
+  'SUPER-RAIN', // 18: Extraordinary rainstorm
+  'FREEZ-RAIN', // 19: Rain with hail
+  'HAIL-STRM',  // 20: Thundershowers with hail
+  'TORRENT',    // 21: Heavy rainstorm
+  'SAND-BLOW',  // 22: Sand blowing
+  'HVY-SAND',   // 23: Strong sandstorm
+  'DOWNPOUR',   // 24: Rainstorm
+  'NO-SYNC',    // 25: Unknown weather
+  'NIGHT-CLD',  // 26: Cloudy at night
+  'NIGHT-SHWR', // 27: Shower at night
+  'CLEAR-NGT'   // 28: Clear night
 ]
 
-// Reusable helper for the 5 Pip-Boy limb gauges
+// Reusable helper for the 5 Pip-Boy limb gauges (Includes automatic backdrop glow!)
 const createLimbGauge = (label, x, y, initialText = '0') => {
   const boxW = 64
   const barX = x + 7
   const barY = y + 20
   const fillX = x + 8
   const fillY = y + 21
-  const textY = y + 30
+  const textY = y + 28
+
+  // 0. Automatic Ambient Glow directly behind this specific gauge (Larger & Brighter!)
+  createWidget(widget.IMG, {
+    x: x - 28,
+    y: y - 18,
+    w: boxW + 56, // 120px wide (compensates for transparent PNG padding)
+    h: 92,        // 92px tall
+    src: GLOW_AMBIENT_IMG,
+    auto_scale: true,
+    alpha: 135,   // Boosted from 65 -> 135 so the bloom actually pops!
+    show_level: show_level.ONLY_NORMAL
+  })
 
   createWidget(widget.TEXT, {
     x: x,
-    y: y,
+    y: y - 4,
     w: boxW,
     h: 20,
-    color: 0x39ff14,
-    text_size: 17,
+    color: GLOW_NEON_COLOR,
+    text_size: 20,
     align_h: align.CENTER_H,
     align_v: align.CENTER_V,
     font: PIPBOY_FONT,
@@ -92,7 +111,7 @@ const createLimbGauge = (label, x, y, initialText = '0') => {
     y: fillY,
     w: 0,
     h: 6,
-    color: 0x39ff14,
+    color: GLOW_NEON_COLOR,
     show_level: show_level.ONLY_NORMAL
   })
 
@@ -101,9 +120,9 @@ const createLimbGauge = (label, x, y, initialText = '0') => {
     y: textY,
     w: boxW,
     h: 24,
-    color: 0x39ff14,
-    text_size: 22,
-    bold: true,
+    color: GLOW_CORE_COLOR,
+    text_size: 24,
+    bold: false,
     align_h: align.CENTER_H,
     align_v: align.CENTER_V,
     font: PIPBOY_FONT,
@@ -125,7 +144,7 @@ const createLimbGauge = (label, x, y, initialText = '0') => {
         y: fillY,
         w: currentWidth,
         h: 6,
-        color: 0x39ff14
+        color: GLOW_NEON_COLOR
       })
     }
   }
@@ -155,7 +174,6 @@ WatchFace({
     const LEFT_COL_X = 62   // Shifted 6px right for cleaner breathing room
     const LEFT_COL_W = 96   // Uniform width (96px) for Date/Weather/PWR modules
     const FRAME_RIGHT_X = 168 // Right vertical wall X coordinate
-    const FRAME_COLOR = 0x009900 // Darker retro CRT green for structural lines & labels
 
     const VB_X = 248        // Vault Boy X position (Right side)
     const VB_Y = 148        // Vault Boy Y position
@@ -187,9 +205,14 @@ WatchFace({
           id: 4,
           preview: `${ROOT_IMAGES_PATH}bg/bg_04.png`,
           path: `${ROOT_IMAGES_PATH}bg/bg_04.png`
+        },
+        {
+          id: 5,
+          preview: `${ROOT_IMAGES_PATH}bg/bg_05.png`,
+          path: `${ROOT_IMAGES_PATH}bg/bg_05.png`
         }
       ],
-      count: 4,
+      count: 5,
       default_id: 2,
       fg: `${ROOT_IMAGES_PATH}bg/mask.png`,
       tips_x: 180,
@@ -201,7 +224,7 @@ WatchFace({
     // 1.1 Top & Bottom Logos
     createWidget(widget.IMG, {
       x: 170,
-      y: 12,
+      y: 8,
       w: 130,
       h: 50,
       auto_scale: true,
@@ -220,11 +243,51 @@ WatchFace({
     })
 
     // =========================================================================
+    // LAYER: ATMOSPHERIC AMBIENT GLOW BACKDROPS (Place behind HUD)
+    // =========================================================================
+
+    // 1. Clock Container Glow (Expanded & brightened to bleed across the whole box)
+    createWidget(widget.IMG, {
+      x: LEFT_COL_X - 36,
+      y: 10,
+      w: 180,
+      h: 260,
+      src: GLOW_AMBIENT_IMG,
+      auto_scale: true,
+      alpha: 175,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 2. Data Container Glow (Expanded & brightened)
+    createWidget(widget.IMG, {
+      x: LEFT_COL_X - 55,
+      y: 160,
+      w: 200,
+      h: 280,
+      src: GLOW_AMBIENT_IMG,
+      auto_scale: true,
+      alpha: 145,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 3. Vault Boy Center Screen Ambient Glow
+    createWidget(widget.IMG, {
+      x: VB_X - 45,
+      y: VB_Y - 60,
+      w: 220,
+      h: 240,
+      src: GLOW_AMBIENT_IMG,
+      auto_scale: true,
+      alpha: 110,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // =========================================================================
     // RIGHT SIDE: VAULT BOY MASCOT + 5 TIGHT LIMB TELEMETRY GAUGES
     // =========================================================================
     const vaultBoyWidget = createWidget(widget.IMG, {
       x: VB_X,
-      y: VB_Y,
+      y: VB_Y - 30,
       w: 130,
       h: 170,
       src: `${ROOT_IMAGES_PATH}vault_boy/vault_boy_01.png`,
@@ -232,32 +295,32 @@ WatchFace({
     })
 
     // All 5 gauges are anchored tightly around Vault Boy (VB_X, VB_Y)
-    const stressGauge = createLimbGauge('STRESS', VB_X + 28, VB_Y - 58, '0')  // Head
-    const calGauge    = createLimbGauge('CAL',    VB_X - 56, VB_Y + 42, '0')  // Left Arm
-    const bpmGauge    = createLimbGauge('BPM',    VB_X + 118, VB_Y + 42, '--')// Right Arm
-    const stepsGauge  = createLimbGauge('STEPS',  VB_X - 18, VB_Y + 170, '0') // Left Leg
-    const paiGauge    = createLimbGauge('PAI',    VB_X + 74, VB_Y + 170, '0') // Right Leg
+    const stressGauge = createLimbGauge('STRESS', VB_X + 28, VB_Y - 85, '0')  // Head
+    const calGauge    = createLimbGauge('CAL',    VB_X - 56, VB_Y + 12, '0')  // Left Arm
+    const bpmGauge    = createLimbGauge('BPM',    VB_X + 118, VB_Y + 12, '--')// Right Arm
+    const stepsGauge  = createLimbGauge('STEPS',  VB_X - 18, VB_Y + 140, '0') // Left Leg
+    const paiGauge    = createLimbGauge('PAI',    VB_X + 74, VB_Y + 140, '0') // Right Leg
 
     // =========================================================================
     // LEFT SIDE: TOP CONTAINER [TIME] (Aligned Outer Lines + Extended Inner Wing)
     // =========================================================================
 
-    // TIME Container - Line 1: Top Horizontal Line (Aligned at x: 62, matching bottom DATA line)
+    // TIME Container - Line 1: Top Horizontal Line
     createWidget(widget.FILL_RECT, {
-      x: LEFT_COL_X + 20,
-      y: 72,
-      w: FRAME_RIGHT_X - LEFT_COL_X - 18,
-      h: 2,
+      x: LEFT_COL_X + 28,
+      y: 62,
+      w: FRAME_RIGHT_X - LEFT_COL_X - 28,
+      h: 3,
       color: FRAME_COLOR,
       show_level: show_level.ONLY_NORMAL
     })
 
-    // TIME Container - Line 2: Right Vertical Wall
+    // TIME Container - Line 2: Right Vertical Wall (Starts at y: 62, height +10px to 153)
     createWidget(widget.FILL_RECT, {
       x: FRAME_RIGHT_X,
-      y: 72,
-      w: 2,
-      h: 142, // Runs down to y: 214
+      y: 62,
+      w: 3,
+      h: 152,
       color: FRAME_COLOR,
       show_level: show_level.ONLY_NORMAL
     })
@@ -265,10 +328,31 @@ WatchFace({
     // TIME Container - Line 3: Bottom Horizontal Line (Extended to x: 12, ~5px from bezel edge!)
     createWidget(widget.FILL_RECT, {
       x: 12,
-      y: 212,
+      y: 211,
       w: FRAME_RIGHT_X - 12 + 2,
-      h: 2,
+      h: 3,
       color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 60-Second Sweep Bar (Sits in the channel between TIME y:212 and DATA y:220)
+    const SEC_BAR_MAX_W = FRAME_RIGHT_X - 12 + 2 // 158px full width
+
+    createWidget(widget.FILL_RECT, {
+      x: 12,
+      y: 215, // Use y: 212, h: 3 if you want to replace Line 3 instead of sitting between the lines
+      w: SEC_BAR_MAX_W,
+      h: 4,
+      color: 0x003300,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    const secBarFill = createWidget(widget.FILL_RECT, {
+      x: 12,
+      y: 215,
+      w: 0,
+      h: 4,
+      color: GLOW_NEON_COLOR,
       show_level: show_level.ONLY_NORMAL
     })
 
@@ -279,7 +363,7 @@ WatchFace({
       w: 42,
       h: 16,
       color: FRAME_COLOR,
-      text_size: 12,
+      text_size: 17,
       align_h: align.LEFT,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -287,16 +371,26 @@ WatchFace({
       show_level: show_level.ONLY_NORMAL
     })
 
-    // 3. Time Display (Shifted right with LEFT_COL_X = 62)
+    // Blinking Terminal Cursor next to 'TIME' (x: 16..46 is 'TIME', so x: 48 sits right after it)
+    const timeCursor = createWidget(widget.FILL_RECT, {
+      x: 44,
+      y: 204, // Aligns with the baseline of the 'TIME' label (or use y: 196, w: 7, h: 12 for a full-height terminal block!)
+      w: 9,
+      h: 3,
+      color: GLOW_CORE_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 3. Time Display (Centered inline with DATA values/bars & enlarged to 90px)
     const hourWidget = createWidget(widget.TEXT, {
-      x: LEFT_COL_X,
-      y: 76,
+      x: LEFT_COL_X + 4,
+      y: 66,
       w: LEFT_COL_W,
-      h: 66,
-      color: 0x39ff14,
-      text_size: 80,
-      bold: true,
-      align_h: align.LEFT,
+      h: 72,
+      color: GLOW_CORE_COLOR,
+      text_size: 90,
+      bold: false,
+      align_h: align.CENTER_H, // Centered inline with the 96px DATA bars below!
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
       text: '--',
@@ -304,39 +398,14 @@ WatchFace({
     })
 
     const minuteWidget = createWidget(widget.TEXT, {
-      x: LEFT_COL_X,
-      y: 140,
+      x: LEFT_COL_X + 4,
+      y: 136,
       w: LEFT_COL_W,
-      h: 66,
-      color: 0x39ff14,
-      text_size: 80,
-      bold: true,
-      align_h: align.LEFT,
-      align_v: align.CENTER_V,
-      font: PIPBOY_FONT,
-      text: '--',
-      show_level: show_level.ONLY_NORMAL
-    })
-
-    // Smaller Seconds Box Background (26x20 instead of 32x24, tucked at x: 136)
-    createWidget(widget.FILL_RECT, {
-      x: 136,
-      y: 182,
-      w: 26,
-      h: 20,
-      color: 0x39ff14,
-      show_level: show_level.ONLY_NORMAL
-    })
-
-    const secondWidget = createWidget(widget.TEXT, {
-      x: 136,
-      y: 182,
-      w: 26,
-      h: 20,
-      color: 0x000000,
-      text_size: 16,
-      bold: true,
-      align_h: align.CENTER_H,
+      h: 72,
+      color: GLOW_CORE_COLOR,
+      text_size: 90,
+      bold: false,
+      align_h: align.CENTER_H, // Centered inline with the 96px DATA bars below!
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
       text: '--',
@@ -352,7 +421,7 @@ WatchFace({
       x: 12,
       y: 220,
       w: FRAME_RIGHT_X - 12 + 2,
-      h: 2,
+      h: 3,
       color: FRAME_COLOR,
       show_level: show_level.ONLY_NORMAL
     })
@@ -361,8 +430,8 @@ WatchFace({
     createWidget(widget.FILL_RECT, {
       x: FRAME_RIGHT_X,
       y: 220,
-      w: 2,
-      h: 178, // Runs down to y: 398
+      w: 3,
+      h: 179, // Runs down to y: 398
       color: FRAME_COLOR,
       show_level: show_level.ONLY_NORMAL
     })
@@ -372,7 +441,7 @@ WatchFace({
       x: LEFT_COL_X + 8,
       y: 396,
       w: FRAME_RIGHT_X - LEFT_COL_X - 6,
-      h: 2,
+      h: 3,
       color: FRAME_COLOR,
       show_level: show_level.ONLY_NORMAL
     })
@@ -384,7 +453,7 @@ WatchFace({
       w: 42,
       h: 16,
       color: FRAME_COLOR,
-      text_size: 12,
+      text_size: 17,
       align_h: align.LEFT,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -410,7 +479,7 @@ WatchFace({
       w: LEFT_COL_W,
       h: 18,
       color: 0x000000,
-      text_size: 18,
+      text_size: 19,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -420,12 +489,12 @@ WatchFace({
 
     const dateNumWidget = createWidget(widget.TEXT, {
       x: LEFT_COL_X,
-      y: DATA_Y_MODULE_HELPER + 19,
+      y: DATA_Y_MODULE_HELPER + 21,
       w: LEFT_COL_W,
       h: 24,
-      color: 0x39ff14,
-      text_size: 24,
-      bold: true,
+      color: GLOW_CORE_COLOR,
+      text_size: 26,
+      bold: false,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -445,12 +514,12 @@ WatchFace({
 
     createWidget(widget.TEXT, {
       x: LEFT_COL_X,
-      y: DATA_Y_MODULE_HELPER + 47,
+      y: DATA_Y_MODULE_HELPER + 46,
       w: 48,
       h: 20,
       color: 0x000000,
-      text_size: 18,
-      bold: true,
+      text_size: 20,
+      bold: false,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -463,9 +532,9 @@ WatchFace({
       y: DATA_Y_MODULE_HELPER + 45,
       w: LEFT_COL_W - 50,
       h: 24,
-      color: 0x39ff14,
-      text_size: 24,
-      bold: true,
+      color: GLOW_CORE_COLOR,
+      text_size: 28,
+      bold: false,
       align_h: align.RIGHT,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -478,9 +547,9 @@ WatchFace({
       y: DATA_Y_MODULE_HELPER + 71,
       w: LEFT_COL_W,
       h: 22,
-      color: 0x39ff14,
-      text_size: 22,
-      bold: true,
+      color: GLOW_CORE_COLOR,
+      text_size: 26,
+      bold: false,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -490,12 +559,12 @@ WatchFace({
 
     const weatherRangeWidget = createWidget(widget.TEXT, {
       x: LEFT_COL_X,
-      y: DATA_Y_MODULE_HELPER + 95,
+      y: DATA_Y_MODULE_HELPER + 97,
       w: LEFT_COL_W,
       h: 22,
-      color: 0x39ff14,
-      text_size: 22,
-      bold: true,
+      color: GLOW_CORE_COLOR,
+      text_size: 26,
+      bold: false,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -506,7 +575,7 @@ WatchFace({
     // 6. Power (PWR) Module at Bottom of DATA Container (Clean & perfectly spaced)
     createWidget(widget.FILL_RECT, {
       x: LEFT_COL_X,
-      y: DATA_Y_MODULE_HELPER + 122,
+      y: DATA_Y_MODULE_HELPER + 124,
       w: 42,
       h: 18,
       color: 0x39ff14,
@@ -515,12 +584,12 @@ WatchFace({
 
     createWidget(widget.TEXT, {
       x: LEFT_COL_X,
-      y: DATA_Y_MODULE_HELPER + 122,
+      y: DATA_Y_MODULE_HELPER + 124,
       w: 42,
       h: 18,
       color: 0x000000,
-      text_size: 18,
-      bold: true,
+      text_size: 20,
+      bold: false,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -530,12 +599,12 @@ WatchFace({
 
     const batteryTextWidget = createWidget(widget.TEXT, {
       x: LEFT_COL_X + 44,
-      y: DATA_Y_MODULE_HELPER + 121,
+      y: DATA_Y_MODULE_HELPER + 123,
       w: LEFT_COL_W - 44,
       h: 22,
-      color: 0x39ff14,
-      text_size: 22,
-      bold: true,
+      color: GLOW_CORE_COLOR,
+      text_size: 24,
+      bold: false,
       align_h: align.RIGHT,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -554,14 +623,106 @@ WatchFace({
 
     const batteryBarFill = createWidget(widget.FILL_RECT, {
       x: LEFT_COL_X + 1,
-      y: DATA_Y_MODULE_HELPER + 148,
+      y: DATA_Y_MODULE_HELPER + 149,
       w: LEFT_COL_W - 2,
       h: 8,
       color: 0x39ff14,
       show_level: show_level.ONLY_NORMAL
     })
 
-    // --- State & Telemetry Caches ---
+    // =========================================================================
+    // INTERACTIVE TOUCH BUTTONS (Invisible Overlays for Quick Access)
+    // =========================================================================
+    
+    // Native Watchface Shortcut: Tap Hours/Minutes to open System Alarms
+    createWidget(widget.IMG_CLICK, {
+      x: LEFT_COL_X,
+      y: 72,
+      w: FRAME_RIGHT_X - LEFT_COL_X,
+      h: 140,
+      type: data_type.ALARM_CLOCK,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // Native Watchface Shortcut: Tap Date to open Calendar
+    createWidget(widget.IMG_CLICK, {
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER,
+      w: FRAME_RIGHT_X - LEFT_COL_X,
+      h: 40,
+      type: data_type.SUN_CURRENT,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // Native Watchface Shortcut: Tap TEMP module to open Weather App
+    createWidget(widget.IMG_CLICK, {
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 40,
+      w: FRAME_RIGHT_X - LEFT_COL_X,
+      h: 65,
+      type: data_type.WEATHER,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // Native Watchface Shortcut: Tap PWR module to open Battery Settings
+    createWidget(widget.IMG_CLICK, {
+      x: LEFT_COL_X,
+      y: DATA_Y_MODULE_HELPER + 122,
+      w: FRAME_RIGHT_X - LEFT_COL_X,
+      h: 36,
+      type: data_type.BATTERY,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // Tap Vault Boy to open your main Vitals / Activity screen
+    const vbClickWidget = createWidget(widget.IMG_CLICK, {
+      x: VB_X,
+      y: VB_Y,
+      w: 130,
+      h: 170,
+      type: data_type.HEART,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+
+    // =========================================================================
+    // ALWAYS-ON DISPLAY (AOD) WIDGETS (Pure black background, low-power green)
+    // =========================================================================
+    const aodTimeWidget = createWidget(widget.TEXT, {
+      x: 0,
+      y: 155,
+      w: 480,
+      h: 100,
+      color: GLOW_NEON_COLOR, // Or FRAME_COLOR (0x009900) for an even dimmer night-friendly glow
+      text_size: 92,
+      bold: true,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: '--:--',
+      show_level: show_level.ONAL_AOD
+    })
+
+    const aodDateWidget = createWidget(widget.TEXT, {
+      x: 0,
+      y: 260,
+      w: 480,
+      h: 40,
+      color: FRAME_COLOR,
+      text_size: 28,
+      bold: true,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: '------ -- ---',
+      show_level: show_level.ONAL_AOD
+    })
+
+
+    // =========================================================================
+    // STATE & TELEMETRY CACHES (For Efficient Updates)
+    // =========================================================================
+
     let lastHourStr = ''
     let lastMinStr = ''
     let lastSecStr = ''
@@ -639,8 +800,8 @@ WatchFace({
 
         if (today) {
           const hasHighLow = typeof today.high === 'number' && typeof today.low === 'number'
-          const tempVal = today.cur ?? (hasHighLow ? Math.round((today.high + today.low) / 2) : today.high)
-          const statusStr = WEATHER_STATUS[today.index] || 'CLEAR'
+          const tempVal = today.cur ?? wData?.cur ?? (hasHighLow ? Math.round((today.high + today.low) / 2) : today.high)
+          const statusStr = WEATHER_STATUS[today.index] || 'NO-SYNC'
 
           weatherTempWidget.setProperty(prop.MORE, {
             text: tempVal !== undefined ? `${tempVal}°C` : '--°C'
@@ -720,12 +881,14 @@ WatchFace({
         }
       }
 
-      // Evaluate 8-State Vault Boy Pose
+      // Evaluate Vault Boy Pose (Supports 01-09 and 10+ automatically via pad())
       let targetPose = 1
       if (pai > 130) {
         targetPose = 8
       } else if (heartRate > 100) {
         targetPose = 7
+      } else if (calories > 1500) {
+        targetPose = 9 // Nuka-Cola pose when calories > 1500!
       } else if (exerciseMins > 60) {
         targetPose = 6
       } else if (steps > 8000) {
@@ -737,20 +900,35 @@ WatchFace({
       } else if (sleepScore > 80 && timeSensor.getHours() >= 6 && timeSensor.getHours() < 12) {
         targetPose = 2
       }
+      // Example for Pose 10 whenever you add it:
+      // else if (someCondition) { targetPose = 10 }
 
       if (targetPose !== lastPoseId) {
         lastPoseId = targetPose
         vaultBoyWidget.setProperty(prop.MORE, {
-          src: `${ROOT_IMAGES_PATH}vault_boy/vault_boy_0${targetPose}.png`
+          src: `${ROOT_IMAGES_PATH}vault_boy/vault_boy_${pad(targetPose)}.png`
         })
       }
     }
 
+    let lastSecVal = -1
+
     const updateSeconds = () => {
-      const secs = pad(timeSensor.getSeconds())
-      if (secs !== lastSecStr) {
-        lastSecStr = secs
-        secondWidget.setProperty(prop.MORE, { text: secs })
+      const secs = timeSensor.getSeconds()
+      if (secs !== lastSecVal) {
+        lastSecVal = secs
+        // 1. TIME cursor blink: Toggle visibility every second
+        timeCursor.setProperty(prop.VISIBLE, secs % 2 === 0)
+
+        // 2. SWEEP BAR: Update width based on current seconds (0-59) with a minimum width of 2px for visibility
+        const currentW = secs === 0 ? 0 : Math.max(2, Math.round((secs / 59) * SEC_BAR_MAX_W))
+        secBarFill.setProperty(prop.MORE, {
+          x: 12,
+          y: 215,
+          w: currentW,
+          h: 4,
+          color: GLOW_NEON_COLOR
+        })
       }
     }
 
@@ -768,21 +946,26 @@ WatchFace({
         minuteWidget.setProperty(prop.MORE, { text: mins })
       }
 
-      updateSeconds()
+      aodTimeWidget.setProperty(prop.MORE, { text: `${hours}:${mins}` })
 
       const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
       const dayIdx = timeSensor.getDay ? timeSensor.getDay() % 7 : new Date().getDay()
       const dateNum = timeSensor.getDate ? timeSensor.getDate() : new Date().getDate()
-      const monthNum = timeSensor.getMonth ? timeSensor.getMonth() : (new Date().getMonth() + 1)
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+      const monthIdx = timeSensor.getMonth ? (timeSensor.getMonth() - 1) % 12 : new Date().getMonth()
+      const monthNum = timeSensor.getMonth ? timeSensor.getMonth() : new Date().getMonth()
 
       const dayName = days[dayIdx]
-      const dateStr = `${pad(dateNum)}.${pad(monthNum)}`
+      const monthName = months[monthIdx]
+      const dateStr = `${pad(dateNum)} ${pad(monthName)}`
 
       const fullDateKey = `${dayName}_${dateStr}`
       if (fullDateKey !== lastDateStr) {
         lastDateStr = fullDateKey
         dayWidget.setProperty(prop.MORE, { text: dayName })
         dateNumWidget.setProperty(prop.MORE, { text: dateStr })
+        // Update AOD Date
+        aodDateWidget.setProperty(prop.MORE, { text: `${dayName}  ${dateStr}` })
       }
 
       updateTelemetry()
@@ -801,7 +984,7 @@ WatchFace({
 
       batteryBarFill.setProperty(prop.MORE, {
         x: LEFT_COL_X + 1,
-        y: DATA_Y_MODULE_HELPER + 148,
+        y: DATA_Y_MODULE_HELPER + 149,
         w: currentBarWidth,
         h: 8,
         color: 0x39ff14
@@ -841,10 +1024,6 @@ WatchFace({
     createWidget(widget.WIDGET_DELEGATE, {
       resume_call: () => {
         refreshAll()
-        startSecondTicker()
-      },
-      pause_call: () => {
-        stopSecondTicker()
       }
     })
 
@@ -866,13 +1045,13 @@ WatchFace({
     }
 
     this.sensors = { batterySensor, stepSensor, calorieSensor, hrSensor, stressSensor }
-    this.handlers = { updateBattery, updateTelemetry, stopSecondTicker }
+    this.handlers = { updateBattery, updateTelemetry }
   },
 
   onDestroy() {
     if (this.handlers && this.sensors) {
       const { batterySensor, stepSensor, calorieSensor, hrSensor, stressSensor } = this.sensors
-      const { updateBattery, updateTelemetry, stopSecondTicker } = this.handlers
+      const { updateBattery, updateTelemetry } = this.handlers
 
       if (typeof stopSecondTicker === 'function') {
         stopSecondTicker()
@@ -893,6 +1072,6 @@ WatchFace({
         stressSensor.offChange(updateTelemetry)
       }
     }
-    console.log('Pip-Boy Mini-3000 destroyed.')
+    console.log('Pip-Boy Mini-3000 destroyed.') //
   }
 })

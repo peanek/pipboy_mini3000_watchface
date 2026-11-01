@@ -1,8 +1,8 @@
 {
-  "configVersion": "v2",
+  "configVersion": "v3",
   "app": {
-    "appId": 22699,
-    "appName": "PipBoy",
+    "appId": 1134296,
+    "appName": "PipBoy Mini-3000 CRT",
     "appType": "watchface",
     "version": {
       "code": 1,
@@ -10,7 +10,7 @@
     },
     "icon": "icon.png",
     "vender": "ppeczkowski.pl",
-    "description": "Fallout Pip-Boy mini 3000 Watchface"
+    "description": "Pip-Boy Mini-3000 Watchface"
   },
   "permissions": [
     "data:user.hd.step",
@@ -24,9 +24,9 @@
   ],
   "runtime": {
     "apiVersion": {
-      "compatible": "2.0.0",
-      "target": "2.0.0",
-      "minVersion": "2.0.0"
+      "compatible": "3.0.0",
+      "target": "3.0.0",
+      "minVersion": "3.0.0"
     }
   },
   "targets": {
@@ -36,8 +36,8 @@
           "path": "watchface/index",
           "main": 1,
           "editable": 1,
-          "lockscreen": 0,
-          "hightCost": 0
+          "lockscreen": 1,
+          "highticker": 1
         }
       },
       "platforms": [
