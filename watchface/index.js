@@ -6,7 +6,7 @@ const PIPBOY_FONT = 'fonts/gothic821.ttf'
 
 // Color Palette
 const GLOW_AMBIENT_IMG = `${ROOT_IMAGES_PATH}bg/glow_ambient.png`
-const FRAME_COLOR = 0x009900        // CRT structural outlines and labels
+const FRAME_COLOR = 0x009900      // CRT structural outlines and labels
 const GLOW_CORE_COLOR = 0xD0FFAA    // Intense "hot core" for values (19, 51, 1000, 39, etc.)
 const GLOW_NEON_COLOR = 0x39FF14    // Native glowing green for secondary texts/badges
 
@@ -320,7 +320,7 @@ WatchFace({
       x: FRAME_RIGHT_X,
       y: 62,
       w: 3,
-      h: 152,
+      h: 153,
       color: FRAME_COLOR,
       show_level: show_level.ONLY_NORMAL
     })
@@ -328,15 +328,13 @@ WatchFace({
     // TIME Container - Line 3: Bottom Horizontal Line (Extended to x: 12, ~5px from bezel edge!)
     createWidget(widget.FILL_RECT, {
       x: 12,
-      y: 211,
+      y: 212,
       w: FRAME_RIGHT_X - 12 + 2,
       h: 3,
       color: FRAME_COLOR,
       show_level: show_level.ONLY_NORMAL
     })
 
-    // 60-Second Sweep Bar (Sits in the channel between TIME y:212 and DATA y:220)
-    const SEC_BAR_MAX_W = FRAME_RIGHT_X - 12 + 2 // 158px full width
 
     createWidget(widget.FILL_RECT, {
       x: 12,
@@ -344,15 +342,6 @@ WatchFace({
       w: SEC_BAR_MAX_W,
       h: 4,
       color: 0x003300,
-      show_level: show_level.ONLY_NORMAL
-    })
-
-    const secBarFill = createWidget(widget.FILL_RECT, {
-      x: 12,
-      y: 215,
-      w: 0,
-      h: 4,
-      color: GLOW_NEON_COLOR,
       show_level: show_level.ONLY_NORMAL
     })
 
@@ -449,7 +438,7 @@ WatchFace({
     // 'DATA' Label: Moved to the far-left wing right below the top DATA line!
     createWidget(widget.TEXT, {
       x: 16,
-      y: 224,
+      y: 226,
       w: 42,
       h: 16,
       color: FRAME_COLOR,
@@ -475,11 +464,11 @@ WatchFace({
 
     const dayWidget = createWidget(widget.TEXT, {
       x: LEFT_COL_X,
-      y: DATA_Y_MODULE_HELPER,
+      y: DATA_Y_MODULE_HELPER -2 ,
       w: LEFT_COL_W,
-      h: 18,
+      h: 20,
       color: 0x000000,
-      text_size: 19,
+      text_size: 20,
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
@@ -584,7 +573,7 @@ WatchFace({
 
     createWidget(widget.TEXT, {
       x: LEFT_COL_X,
-      y: DATA_Y_MODULE_HELPER + 124,
+      y: DATA_Y_MODULE_HELPER + 123,
       w: 42,
       h: 18,
       color: 0x000000,
@@ -599,7 +588,7 @@ WatchFace({
 
     const batteryTextWidget = createWidget(widget.TEXT, {
       x: LEFT_COL_X + 44,
-      y: DATA_Y_MODULE_HELPER + 123,
+      y: DATA_Y_MODULE_HELPER + 122,
       w: LEFT_COL_W - 44,
       h: 22,
       color: GLOW_CORE_COLOR,
@@ -627,6 +616,233 @@ WatchFace({
       w: LEFT_COL_W - 2,
       h: 8,
       color: 0x39ff14,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // =========================================================================
+    // RIGHT SIDE: [ENV] CONTAINER WITH RIGHT-HAND LABEL WING
+    // Mirrors TIME & DATA: Inner box (x: 180..396) + Right wing for 'ENV' label
+    // =========================================================================
+    const ENV_X = 177
+    const ENV_Y = 345
+    const ENV_W = 216          // Inner data box width (x: 180 -> x: 396)
+    const ENV_H = 74           // Runs y: 340 -> y: 414
+    const ENV_WALL_R = ENV_X + ENV_W - 3 // Right vertical wall at x: 393
+
+    // Ambient glow behind ENV container
+    createWidget(widget.IMG, {
+      x: ENV_X - 20,
+      y: ENV_Y - 12,
+      w: ENV_W + 70,
+      h: ENV_H + 24,
+      src: GLOW_AMBIENT_IMG,
+      auto_scale: true,
+      alpha: 135,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 1. Top Horizontal Line (Continuous from x: 180 out to right bezel x: 444!)
+    createWidget(widget.FILL_RECT, {
+      x: ENV_X,
+      y: ENV_Y,
+      w: 270,
+      h: 3,
+      color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 2. Left Vertical Wall (x: 180)
+    createWidget(widget.FILL_RECT, {
+      x: ENV_X,
+      y: ENV_Y,
+      w: 3,
+      h: ENV_H,
+      color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 4. Bottom Horizontal Line (Extends slightly past right wall to x: 416 to follow bezel curve)
+    createWidget(widget.FILL_RECT, {
+      x: ENV_X,
+      y: ENV_Y + ENV_H - 3,
+      w: 216,
+      h: 3,
+      color: FRAME_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 'ENV' Label: Tucked inside the right-hand wing under the top line (mirrors 'DATA' on the left!)
+    createWidget(widget.TEXT, {
+      x: ENV_WALL_R + 18,
+      y: ENV_Y + 6,
+      w: 40,
+      h: 16,
+      color: FRAME_COLOR,
+      text_size: 17,
+      align_h: align.LEFT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: 'ENV',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // -------------------------------------------------------------------------
+    // ROW 1: [SUN] + sun_rise.png + Time + sun_set.png + Time
+    // -------------------------------------------------------------------------
+    const ROW1_Y = ENV_Y + 12
+
+    // 'SUN' Badge
+    createWidget(widget.FILL_RECT, {
+      x: ENV_X + 10,
+      y: ROW1_Y,
+      w: 40,
+      h: 18,
+      color: GLOW_NEON_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    createWidget(widget.TEXT, {
+      x: ENV_X + 10,
+      y: ROW1_Y - 1,
+      w: 40,
+      h: 18,
+      color: 0x000000,
+      text_size: 18,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: 'SUN',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // Sunrise Icon (sun_rise.png)
+    createWidget(widget.IMG, {
+      x: ENV_X + 58,
+      y: ROW1_Y + 1,
+      w: 16,
+      h: 16,
+      auto_scale: true,
+      src: `${ROOT_IMAGES_PATH}icons/sun_rise.png`,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    const sunriseTextWidget = createWidget(widget.TEXT, {
+      x: ENV_X + 76,
+      y: ROW1_Y - 2,
+      w: 54,
+      h: 22,
+      color: GLOW_CORE_COLOR,
+      text_size: 22,
+      align_h: align.LEFT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: '--:--',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // Sunset Icon (sun_set.png)
+    createWidget(widget.IMG, {
+      x: ENV_X + 134,
+      y: ROW1_Y + 1,
+      w: 16,
+      h: 16,
+      auto_scale: true,
+      src: `${ROOT_IMAGES_PATH}icons/sun_set.png`,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    const sunsetTextWidget = createWidget(widget.TEXT, {
+      x: ENV_X + 152,
+      y: ROW1_Y - 2,
+      w: 54,
+      h: 22,
+      color: GLOW_CORE_COLOR,
+      text_size: 22,
+      align_h: align.LEFT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: '--:--',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // -------------------------------------------------------------------------
+    // ROW 2: [RAD] 02 UV   +   [AIR] 24 OK
+    // -------------------------------------------------------------------------
+    const ROW2_Y = ENV_Y + 42
+
+    // 'RAD' Badge
+    createWidget(widget.FILL_RECT, {
+      x: ENV_X + 10,
+      y: ROW2_Y,
+      w: 40,
+      h: 18,
+      color: GLOW_NEON_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    createWidget(widget.TEXT, {
+      x: ENV_X + 10,
+      y: ROW2_Y - 1,
+      w: 40,
+      h: 18,
+      color: 0x000000,
+      text_size: 18,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: 'RAD',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    const radTextWidget = createWidget(widget.TEXT, {
+      x: ENV_X + 54,
+      y: ROW2_Y - 2,
+      w: 56,
+      h: 22,
+      color: GLOW_CORE_COLOR,
+      text_size: 22,
+      align_h: align.LEFT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: '-- UV',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 'AIR' Badge
+    createWidget(widget.FILL_RECT, {
+      x: ENV_X + 114,
+      y: ROW2_Y,
+      w: 38,
+      h: 18,
+      color: GLOW_NEON_COLOR,
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    createWidget(widget.TEXT, {
+      x: ENV_X + 114,
+      y: ROW2_Y - 1,
+      w: 38,
+      h: 18,
+      color: 0x000000,
+      text_size: 18,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: 'AIR',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    const airTextWidget = createWidget(widget.TEXT, {
+      x: ENV_X + 156,
+      y: ROW2_Y - 2,
+      w: 52,
+      h: 22,
+      color: GLOW_CORE_COLOR,
+      text_size: 22,
+      align_h: align.LEFT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: '--',
       show_level: show_level.ONLY_NORMAL
     })
 
@@ -797,6 +1013,29 @@ WatchFace({
       try {
         const wData = weatherSensor?.getForecast?.()
         const today = wData?.forecastData?.data?.[0]
+        
+        // --- Sunrise & Sunset Telemetry ---
+        const tideToday = weatherSensor?.getForecast?.()?.tideData?.data?.[0]
+
+        if (tideToday?.sunrise && tideToday?.sunset) {
+          sunriseTextWidget.setProperty(prop.MORE, {
+            text: `${pad(tideToday.sunrise.hour)}:${pad(tideToday.sunrise.minute)}`
+          })
+          sunsetTextWidget.setProperty(prop.MORE, {
+            text: `${pad(tideToday.sunset.hour)}:${pad(tideToday.sunset.minute)}`
+          })
+        }
+
+        // --- RAD (UV Index) & AIR (AQI) Telemetry ---
+        const uvVal = today?.uvIndex ?? wData?.uvIndex
+        const aqiVal = today?.aqi ?? wData?.aqi
+
+        radTextWidget.setProperty(prop.MORE, {
+          text: uvVal !== undefined ? `${pad(uvVal)} UV` : '02 UV'
+        })
+        airTextWidget.setProperty(prop.MORE, {
+          text: aqiVal !== undefined ? `${aqiVal} OK` : '24 OK'
+        })
 
         if (today) {
           const hasHighLow = typeof today.high === 'number' && typeof today.low === 'number'
@@ -817,30 +1056,25 @@ WatchFace({
         console.log('Weather error:', err)
       }
 
-      // --- QUICK SIMULATOR MOCK OVERRIDES ---
-      // pai = 135       // Forces PAI gauge to 135 & triggers Pose 8 (Psycho/Jet)
-      // stress = 80     // Forces STRESS gauge to 80 & triggers Pose 4 (if PAI <= 130)
-      // heartRate = 115 // Triggers Pose 7
-      // exerciseMins = 61 // Triggers Pose 6 (Bodybuilder)
-      // steps = 8500    // Triggers Pose 5
-      // battery = 15    // Triggers Pose 3
-      // sleepScore = 75 // Triggers Pose 2
-
-          // =========================================================================
-    // [SCREENSHOT OVERRIDE: TELEMETRY & WEATHER] - Uncomment for store preview!
-    // =========================================================================
-    steps = 8450            // Triggers > 8000 running pose (or looks great on gauge)
-    calories = 1520         // Triggers > 1500 Nuka-Cola pose (Pose 9)
-    heartRate = 76          // Realistic resting BPM (> 100 triggers Pose 7)
-    stress = 32             // Normal stress level (> 75 triggers Pose 4)
-    pai = 85                // Active PAI score (> 130 triggers Pose 8)
-    battery = 85            // 85% PWR bar (< 25 triggers Pose 3)
-    exerciseMins = 45       // (> 60 triggers Pose 6)
-    sleepScore = 88         // (> 80 in morning triggers Pose 2)
-    
-    tempStr = '21°C'        // Clean current temperature
-    condStr = 'CLEAR'       // Weather condition ('OVERCAST', 'CLOUDY', 'RAIN', etc.)
-    hiLoStr = '14°C/24°C'   // Low / High temperature range
+      // =========================================================================
+      // [SCREENSHOT OVERRIDE: TELEMETRY & WEATHER] - Active for store preview!
+      // =========================================================================
+      // steps = 7450            // Triggers > 8000 running pose
+      // calories = 520         // Triggers > 1500 Nuka-Cola pose (Pose 9)
+      // heartRate = 60          // Realistic resting BPM
+      // stress = 10             // Normal stress level
+      // pai = 85                // Active PAI score
+      // battery = 85            // 85% PWR bar
+      // exerciseMins = 10       // Exercise mins
+      // sleepScore = 88         // Sleep score
+      // // Force mock weather display values for clean store preview:
+      // weatherTempWidget.setProperty(prop.MORE, { text: '10°C' })
+      // weatherCondWidget.setProperty(prop.MORE, { text: 'SUNNY' })
+      // weatherRangeWidget.setProperty(prop.MORE, { text: '14°C/24°C' })
+      // sunriseTextWidget.setProperty(prop.MORE, { text: '06:25' })
+      // sunsetTextWidget.setProperty(prop.MORE, { text: '17:55' })
+      // radTextWidget.setProperty(prop.MORE, { text: '02 UV' })
+      // airTextWidget.setProperty(prop.MORE, { text: '57 PR' })
 
       // 1. Left Leg: STEPS (0 - 8000, bar chunked every 100 steps)
       if (steps !== lastStepCount) {
@@ -913,11 +1147,9 @@ WatchFace({
         targetPose = 4
       } else if (battery < 25) {
         targetPose = 3
-      } else if (sleepScore > 80 && timeSensor.getHours() >= 6 && timeSensor.getHours() < 12) {
+      } else if (sleepScore > 80) {
         targetPose = 2
       }
-      // Example for Pose 10 whenever you add it:
-      // else if (someCondition) { targetPose = 10 }
 
       if (targetPose !== lastPoseId) {
         lastPoseId = targetPose
@@ -935,22 +1167,28 @@ WatchFace({
         lastSecVal = secs
         // 1. TIME cursor blink: Toggle visibility every second
         timeCursor.setProperty(prop.VISIBLE, secs % 2 === 0)
-
-        // 2. SWEEP BAR: Update width based on current seconds (0-59) with a minimum width of 2px for visibility
-        const currentW = secs === 0 ? 0 : Math.max(2, Math.round((secs / 59) * SEC_BAR_MAX_W))
-        secBarFill.setProperty(prop.MORE, {
-          x: 12,
-          y: 215,
-          w: currentW,
-          h: 4,
-          color: GLOW_NEON_COLOR
-        })
       }
     }
 
     const updateTime = () => {
+      // =========================================================================
+      // [SCREENSHOT OVERRIDE: TIME & DATE] - Locked to 10:09 for store!
+      // =========================================================================
+      // let hours = '10'
+      // let mins = '09'
+      // let dayName = 'SUNDAY'
+      // let dateStr = '01 NOV'
+
+      // (If you want live time back later, comment out the 4 lines above and uncomment:)
       let hours = pad(timeSensor.getHours())
       let mins = pad(timeSensor.getMinutes())
+      const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
+      const dayIdx = timeSensor.getDay ? timeSensor.getDay() % 7 : new Date().getDay()
+      const dateNum = timeSensor.getDate ? timeSensor.getDate() : new Date().getDate()
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+      const monthIdx = timeSensor.getMonth ? (timeSensor.getMonth() - 1) % 12 : new Date().getMonth()
+      dayName = days[dayIdx]
+      dateStr = `${pad(dateNum)} ${months[monthIdx]}`
 
       if (hours !== lastHourStr) {
         lastHourStr = hours
@@ -963,26 +1201,6 @@ WatchFace({
       }
 
       aodTimeWidget.setProperty(prop.MORE, { text: `${hours}:${mins}` })
-
-      const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
-      const dayIdx = timeSensor.getDay ? timeSensor.getDay() % 7 : new Date().getDay()
-      const dateNum = timeSensor.getDate ? timeSensor.getDate() : new Date().getDate()
-      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-      const monthIdx = timeSensor.getMonth ? (timeSensor.getMonth() - 1) % 12 : new Date().getMonth()
-      const monthNum = timeSensor.getMonth ? timeSensor.getMonth() : new Date().getMonth()
-
-      let dayName = days[dayIdx]
-      const monthName = months[monthIdx]
-      let dateStr = `${pad(dateNum)} ${pad(monthName)}`
-
-
-      // =========================================================================
-      // [SCREENSHOT OVERRIDE: TIME & DATE] - Uncomment to lock 10:09 for store!
-      // =========================================================================
-      hours = '10'
-      mins = '09'
-      dayName = 'SUNDAY'
-      dateStr = '01 NOV'
 
       const fullDateKey = `${dayName}_${dateStr}`
       if (fullDateKey !== lastDateStr) {
@@ -1097,6 +1315,6 @@ WatchFace({
         stressSensor.offChange(updateTelemetry)
       }
     }
-    console.log('Pip-Boy Mini-3000 destroyed.') //
+    console.log('Pip-Boy Mini-3000 destroyed.')
   }
 })
