@@ -35,9 +35,8 @@
         "watchface": {
           "path": "watchface/index",
           "main": 1,
-          "editable": 1,
-          "lockscreen": 1,
-          "highticker": 1
+          "editable": 0,
+          "lockscreen": 1
         }
       },
       "platforms": [
@@ -66,16 +65,16 @@
           "deviceSource": 10551555
         },
         {
-          "name": "Balance",
-          "deviceSource": 8519936
+          "name": "Balance2",
+          "deviceSource": 9568512
         },
         {
-          "name": "BalanceW",
-          "deviceSource": 8519937
+          "name": "Balance2W",
+          "deviceSource": 9568513
         },
         {
-          "name": "BalanceWN",
-          "deviceSource": 8519939
+          "name": "Balance2WN",
+          "deviceSource": 9568515
         }
       ],
       "designWidth": 480

@@ -826,6 +826,22 @@ WatchFace({
       // battery = 15    // Triggers Pose 3
       // sleepScore = 75 // Triggers Pose 2
 
+          // =========================================================================
+    // [SCREENSHOT OVERRIDE: TELEMETRY & WEATHER] - Uncomment for store preview!
+    // =========================================================================
+    steps = 8450            // Triggers > 8000 running pose (or looks great on gauge)
+    calories = 1520         // Triggers > 1500 Nuka-Cola pose (Pose 9)
+    heartRate = 76          // Realistic resting BPM (> 100 triggers Pose 7)
+    stress = 32             // Normal stress level (> 75 triggers Pose 4)
+    pai = 85                // Active PAI score (> 130 triggers Pose 8)
+    battery = 85            // 85% PWR bar (< 25 triggers Pose 3)
+    exerciseMins = 45       // (> 60 triggers Pose 6)
+    sleepScore = 88         // (> 80 in morning triggers Pose 2)
+    
+    tempStr = '21°C'        // Clean current temperature
+    condStr = 'CLEAR'       // Weather condition ('OVERCAST', 'CLOUDY', 'RAIN', etc.)
+    hiLoStr = '14°C/24°C'   // Low / High temperature range
+
       // 1. Left Leg: STEPS (0 - 8000, bar chunked every 100 steps)
       if (steps !== lastStepCount) {
         lastStepCount = steps
@@ -933,8 +949,8 @@ WatchFace({
     }
 
     const updateTime = () => {
-      const hours = pad(timeSensor.getHours())
-      const mins = pad(timeSensor.getMinutes())
+      let hours = pad(timeSensor.getHours())
+      let mins = pad(timeSensor.getMinutes())
 
       if (hours !== lastHourStr) {
         lastHourStr = hours
@@ -955,9 +971,18 @@ WatchFace({
       const monthIdx = timeSensor.getMonth ? (timeSensor.getMonth() - 1) % 12 : new Date().getMonth()
       const monthNum = timeSensor.getMonth ? timeSensor.getMonth() : new Date().getMonth()
 
-      const dayName = days[dayIdx]
+      let dayName = days[dayIdx]
       const monthName = months[monthIdx]
-      const dateStr = `${pad(dateNum)} ${pad(monthName)}`
+      let dateStr = `${pad(dateNum)} ${pad(monthName)}`
+
+
+      // =========================================================================
+      // [SCREENSHOT OVERRIDE: TIME & DATE] - Uncomment to lock 10:09 for store!
+      // =========================================================================
+      hours = '10'
+      mins = '09'
+      dayName = 'SUNDAY'
+      dateStr = '01 NOV'
 
       const fullDateKey = `${dayName}_${dateStr}`
       if (fullDateKey !== lastDateStr) {
