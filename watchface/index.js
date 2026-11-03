@@ -4,6 +4,9 @@ import { Time, Battery, Step, HeartRate, Stress, Sleep, Pai, Calorie, FatBurning
 const ROOT_IMAGES_PATH = 'images/'
 const PIPBOY_FONT = 'fonts/gothic821.ttf'
 
+// Screenshot Mode: If true, the watchface will always render a fixed time/date for store screenshots
+const IS_STORE_SCREENSHOT_MODE = false
+
 // Color Palette
 const GLOW_AMBIENT_IMG = `${ROOT_IMAGES_PATH}bg/glow_ambient.png`
 const FRAME_COLOR = 0x009900      // CRT structural outlines and labels
@@ -626,7 +629,7 @@ WatchFace({
     const ENV_X = 177
     const ENV_Y = 345
     const ENV_W = 216          // Inner data box width (x: 180 -> x: 396)
-    const ENV_H = 74           // Runs y: 340 -> y: 414
+    const ENV_H = 70           // Runs y: 340 -> y: 414
     const ENV_WALL_R = ENV_X + ENV_W - 3 // Right vertical wall at x: 393
 
     // Ambient glow behind ENV container
@@ -689,9 +692,9 @@ WatchFace({
     // -------------------------------------------------------------------------
     // ROW 1: [SUN] + sun_rise.png + Time + sun_set.png + Time
     // -------------------------------------------------------------------------
-    const ROW1_Y = ENV_Y + 12
+    const ROW1_Y = ENV_Y + 11
 
-    // 'SUN' Badge
+    // 'SUN' Badge (x: +10, w: 40)
     createWidget(widget.FILL_RECT, {
       x: ENV_X + 10,
       y: ROW1_Y,
@@ -715,9 +718,9 @@ WatchFace({
       show_level: show_level.ONLY_NORMAL
     })
 
-    // Sunrise Icon (sun_rise.png)
+    // Sunrise Icon & Time
     createWidget(widget.IMG, {
-      x: ENV_X + 58,
+      x: ENV_X + 56,
       y: ROW1_Y + 1,
       w: 16,
       h: 16,
@@ -727,9 +730,9 @@ WatchFace({
     })
 
     const sunriseTextWidget = createWidget(widget.TEXT, {
-      x: ENV_X + 76,
+      x: ENV_X + 75,
       y: ROW1_Y - 2,
-      w: 54,
+      w: 52,
       h: 22,
       color: GLOW_CORE_COLOR,
       text_size: 22,
@@ -740,9 +743,9 @@ WatchFace({
       show_level: show_level.ONLY_NORMAL
     })
 
-    // Sunset Icon (sun_set.png)
+    // Sunset Icon & Time
     createWidget(widget.IMG, {
-      x: ENV_X + 134,
+      x: ENV_X + 132,
       y: ROW1_Y + 1,
       w: 16,
       h: 16,
@@ -752,9 +755,9 @@ WatchFace({
     })
 
     const sunsetTextWidget = createWidget(widget.TEXT, {
-      x: ENV_X + 152,
+      x: ENV_X + 151,
       y: ROW1_Y - 2,
-      w: 54,
+      w: 52,
       h: 22,
       color: GLOW_CORE_COLOR,
       text_size: 22,
@@ -766,11 +769,11 @@ WatchFace({
     })
 
     // -------------------------------------------------------------------------
-    // ROW 2: [RAD] 02 UV   +   [AIR] 24 OK
+    // ROW 2: [RAD] 1 UV   +   [AQI] (Moved Left!) + Value/Status
     // -------------------------------------------------------------------------
-    const ROW2_Y = ENV_Y + 42
+    const ROW2_Y = ENV_Y + 41
 
-    // 'RAD' Badge
+    // 'RAD' Badge (Aligned vertically with 'SUN' at x: +10, w: 40)
     createWidget(widget.FILL_RECT, {
       x: ENV_X + 10,
       y: ROW2_Y,
@@ -794,23 +797,41 @@ WatchFace({
       show_level: show_level.ONLY_NORMAL
     })
 
-    const radTextWidget = createWidget(widget.TEXT, {
-      x: ENV_X + 54,
+    // Live UV Number (x: +55, aligned with Sunrise icon above)
+    const radTextWidget = createWidget(widget.TEXT_FONT, {
+      x: ENV_X + 55,
       y: ROW2_Y - 2,
-      w: 56,
+      w: 22,
       h: 22,
       color: GLOW_CORE_COLOR,
       text_size: 22,
       align_h: align.LEFT,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
-      text: '-- UV',
+      type: data_type.UVI,
+      unit_type: 0,
+      invalid_text: '--',
       show_level: show_level.ONLY_NORMAL
     })
 
-    // 'AIR' Badge
+    // 'UV' Unit Label (Pulled left to x: +70 so "1 UV" sits tightly together!)
+    createWidget(widget.TEXT, {
+      x: ENV_X + 70,
+      y: ROW2_Y,
+      w: 22,
+      h: 18,
+      color: GLOW_CORE_COLOR,
+      text_size: 18,
+      align_h: align.LEFT,
+      align_v: align.CENTER_V,
+      font: PIPBOY_FONT,
+      text: 'UV',
+      show_level: show_level.ONLY_NORMAL
+    })
+
+    // 'AQI' Badge (Moved 18px LEFT to x: +96, w: 38 -> leaves 70px on the right!)
     createWidget(widget.FILL_RECT, {
-      x: ENV_X + 114,
+      x: ENV_X + 96,
       y: ROW2_Y,
       w: 38,
       h: 18,
@@ -819,7 +840,7 @@ WatchFace({
     })
 
     createWidget(widget.TEXT, {
-      x: ENV_X + 114,
+      x: ENV_X + 96,
       y: ROW2_Y - 1,
       w: 38,
       h: 18,
@@ -828,21 +849,32 @@ WatchFace({
       align_h: align.CENTER_H,
       align_v: align.CENTER_V,
       font: PIPBOY_FONT,
-      text: 'AIR',
+      text: 'AQI',
       show_level: show_level.ONLY_NORMAL
     })
 
-    const airTextWidget = createWidget(widget.TEXT, {
-      x: ENV_X + 156,
-      y: ROW2_Y - 2,
-      w: 52,
-      h: 22,
-      color: GLOW_CORE_COLOR,
-      text_size: 22,
+    // Dynamic AQI Status Image via IMG_LEVEL (With Index 0 Fallback & auto_scale)
+    createWidget(widget.TEXT_IMG, {
+      x: ENV_X + 140,
+      y: ROW2_Y - 3,
+      w: 64,
+      h: 20,
+      font_array: [
+        `${ROOT_IMAGES_PATH}aqi/aqi_0.png`, // 0 -> '--'
+        `${ROOT_IMAGES_PATH}aqi/aqi_1.png`, // 1 GOOD
+        `${ROOT_IMAGES_PATH}aqi/aqi_2.png`, // 2 FAIR
+        `${ROOT_IMAGES_PATH}aqi/aqi_3.png`, // 3 MOD
+        `${ROOT_IMAGES_PATH}aqi/aqi_4.png`, // 4 POOR
+        `${ROOT_IMAGES_PATH}aqi/aqi_5.png`, // 5 V.POOR
+        `${ROOT_IMAGES_PATH}aqi/aqi_6.png`, // 6 HAZARD
+        `${ROOT_IMAGES_PATH}aqi/aqi_0.png`, // 7-9 padding, the array needs 10 entries
+        `${ROOT_IMAGES_PATH}aqi/aqi_0.png`,
+        `${ROOT_IMAGES_PATH}aqi/aqi_0.png`
+      ],
+      // text: 3,
+      h_space: 0,
       align_h: align.LEFT,
-      align_v: align.CENTER_V,
-      font: PIPBOY_FONT,
-      text: '--',
+      type: data_type.AQI,
       show_level: show_level.ONLY_NORMAL
     })
 
@@ -900,6 +932,15 @@ WatchFace({
       show_level: show_level.ONLY_NORMAL
     })
 
+    // UV click
+    createWidget(widget.IMG_CLICK, {
+      x: ENV_X,
+      y: ENV_Y,
+      w: ENV_W,
+      h: ENV_H,
+      type: data_type.UVI,
+      show_level: show_level.ONLY_NORMAL
+    })
 
     // =========================================================================
     // ALWAYS-ON DISPLAY (AOD) WIDGETS (Pure black background, low-power green)
@@ -934,7 +975,6 @@ WatchFace({
       show_level: show_level.ONAL_AOD
     })
 
-
     // =========================================================================
     // STATE & TELEMETRY CACHES (For Efficient Updates)
     // =========================================================================
@@ -962,10 +1002,10 @@ WatchFace({
     let lastPaiChunk = -1
 
     const updateTelemetry = () => {
-      let battery = 100
+      let battery = 0
       let steps = 0
       let calories = 0
-      let heartRate = 70
+      let heartRate = 0
       let stress = 0
       let pai = 0
       let sleepScore = 0
@@ -1013,10 +1053,9 @@ WatchFace({
       try {
         const wData = weatherSensor?.getForecast?.()
         const today = wData?.forecastData?.data?.[0]
-        
-        // --- Sunrise & Sunset Telemetry ---
-        const tideToday = weatherSensor?.getForecast?.()?.tideData?.data?.[0]
+        const tideToday = wData?.tideData?.data?.[0]
 
+        // --- Sunrise & Sunset Telemetry ---
         if (tideToday?.sunrise && tideToday?.sunset) {
           sunriseTextWidget.setProperty(prop.MORE, {
             text: `${pad(tideToday.sunrise.hour)}:${pad(tideToday.sunrise.minute)}`
@@ -1026,17 +1065,7 @@ WatchFace({
           })
         }
 
-        // --- RAD (UV Index) & AIR (AQI) Telemetry ---
-        const uvVal = today?.uvIndex ?? wData?.uvIndex
-        const aqiVal = today?.aqi ?? wData?.aqi
-
-        radTextWidget.setProperty(prop.MORE, {
-          text: uvVal !== undefined ? `${pad(uvVal)} UV` : '02 UV'
-        })
-        airTextWidget.setProperty(prop.MORE, {
-          text: aqiVal !== undefined ? `${aqiVal} OK` : '24 OK'
-        })
-
+        // --- Temperature & Condition Telemetry ---
         if (today) {
           const hasHighLow = typeof today.high === 'number' && typeof today.low === 'number'
           const tempVal = today.cur ?? wData?.cur ?? (hasHighLow ? Math.round((today.high + today.low) / 2) : today.high)
@@ -1059,22 +1088,39 @@ WatchFace({
       // =========================================================================
       // [SCREENSHOT OVERRIDE: TELEMETRY & WEATHER] - Active for store preview!
       // =========================================================================
-      // steps = 7450            // Triggers > 8000 running pose
-      // calories = 520         // Triggers > 1500 Nuka-Cola pose (Pose 9)
-      // heartRate = 60          // Realistic resting BPM
+      // steps = 8001            // Triggers > 8000 running pose
+      // calories = 1600         // Triggers > 1500 Nuka-Cola pose (Pose 9)
+      // heartRate = 120          // Realistic resting BPM
       // stress = 10             // Normal stress level
       // pai = 85                // Active PAI score
       // battery = 85            // 85% PWR bar
-      // exerciseMins = 10       // Exercise mins
+      // exerciseMins = 150       // Exercise mins
       // sleepScore = 88         // Sleep score
-      // // Force mock weather display values for clean store preview:
-      // weatherTempWidget.setProperty(prop.MORE, { text: '10°C' })
-      // weatherCondWidget.setProperty(prop.MORE, { text: 'SUNNY' })
-      // weatherRangeWidget.setProperty(prop.MORE, { text: '14°C/24°C' })
-      // sunriseTextWidget.setProperty(prop.MORE, { text: '06:25' })
-      // sunsetTextWidget.setProperty(prop.MORE, { text: '17:55' })
-      // radTextWidget.setProperty(prop.MORE, { text: '02 UV' })
-      // airTextWidget.setProperty(prop.MORE, { text: '57 PR' })
+
+      if (IS_STORE_SCREENSHOT_MODE) {
+        // Safe mock injections for store screenshot preview using proper helper methods
+        calGauge.setText('160')
+        calGauge.setRatio(160 / 1200)
+
+        bpmGauge.setText('120')
+        bpmGauge.setRatio((120 - 40) / 120)
+
+        stepsGauge.setText('800')
+        stepsGauge.setRatio(800 / 8000)
+
+        paiGauge.setText('28')
+        paiGauge.setRatio(28 / 130)
+
+        stressGauge.setText('72')
+        stressGauge.setRatio(72 / 100)
+
+        // Weather and other standard text widgets:
+        weatherTempWidget.setProperty(prop.MORE, { text: '10°C' })
+        weatherCondWidget.setProperty(prop.MORE, { text: 'SUNNY' })
+        weatherRangeWidget.setProperty(prop.MORE, { text: '14°C/24°C' })
+        sunriseTextWidget.setProperty(prop.MORE, { text: '06:25' })
+        sunsetTextWidget.setProperty(prop.MORE, { text: '17:55' })
+      }
 
       // 1. Left Leg: STEPS (0 - 8000, bar chunked every 100 steps)
       if (steps !== lastStepCount) {
@@ -1174,8 +1220,8 @@ WatchFace({
       // =========================================================================
       // [SCREENSHOT OVERRIDE: TIME & DATE] - Locked to 10:09 for store!
       // =========================================================================
-      // let hours = '10'
-      // let mins = '09'
+      // let hours = '21'
+      // let mins = '37'
       // let dayName = 'SUNDAY'
       // let dateStr = '01 NOV'
 
