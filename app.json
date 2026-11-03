@@ -1,8 +1,8 @@
 {
-  "configVersion": "v2",
+  "configVersion": "v3",
   "app": {
-    "appId": 22699,
-    "appName": "PipBoy",
+    "appId": 1134296,
+    "appName": "PipBoy Mini-3000 CRT",
     "appType": "watchface",
     "version": {
       "code": 1,
@@ -10,28 +10,33 @@
     },
     "icon": "icon.png",
     "vender": "ppeczkowski.pl",
-    "description": "Vault-Tec Pip-Boy 3000 Watchface"
+    "description": "Pip-Boy Mini-3000 Watchface"
   },
   "permissions": [
     "data:user.hd.step",
-    "data:user.hd.heart_rate"
+    "data:user.hd.heart_rate",
+    "data:user.hd.stress",
+    "data:user.hd.sleep",
+    "data:user.hd.pai",
+    "data:user.hd.fat_burning",
+    "data:user.hd.calorie",
+    "data:user.hd.weather"
   ],
   "runtime": {
     "apiVersion": {
-      "compatible": "2.0.0",
-      "target": "2.0.0",
-      "minVersion": "2.0.0"
+      "compatible": "3.0.0",
+      "target": "3.0.0",
+      "minVersion": "3.0.0"
     }
   },
   "targets": {
-    "480x480-amazfit-t-rex-3": {
+    "480x480-amazfit-t-rex-3-pro-48-mm": {
       "module": {
         "watchface": {
           "path": "watchface/index",
           "main": 1,
-          "editable": 0,
-          "lockscreen": 0,
-          "hightCost": 0
+          "editable": 1,
+          "lockscreen": 1
         }
       },
       "platforms": [
@@ -46,21 +51,7 @@
         {
           "name": "MatterhornW",
           "deviceSource": 8716547
-        }
-      ],
-      "designWidth": 480
-    },
-    "480x480-amazfit-t-rex-3-pro-48-mm": {
-      "module": {
-        "watchface": {
-          "path": "watchface/index",
-          "main": 1,
-          "editable": 0,
-          "lockscreen": 0,
-          "hightCost": 0
-        }
-      },
-      "platforms": [
+        },
         {
           "name": "Rocky",
           "deviceSource": 10551552
@@ -72,6 +63,18 @@
         {
           "name": "RockyW",
           "deviceSource": 10551555
+        },
+        {
+          "name": "Balance2",
+          "deviceSource": 9568512
+        },
+        {
+          "name": "Balance2W",
+          "deviceSource": 9568513
+        },
+        {
+          "name": "Balance2WN",
+          "deviceSource": 9568515
         }
       ],
       "designWidth": 480
