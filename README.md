@@ -15,7 +15,7 @@ Retro CRT terminal watchface designed for Zepp OS (480x480 circular displays), f
   * **Pose 5 (Running):** Daily steps greater than 8,000.
   * **Pose 6 (Bodybuilder):** Exercise duration greater than 60 mins.
   * **Pose 7 (Combat):** Heart rate greater than 100 BPM.
-  * **Pose 8 (High PAI):** PAI score greater than 130.
+  * **Pose 8 (High PAI (on high)):** PAI score greater than 130.
   * **Pose 9 (Nuka-Cola):** Burned calories greater than 1,500.
 * **Live Telemetry & Weather:** Real-time sync for step count, heart rate, stress, PAI, battery status, and official Zepp OS weather indexing (including descriptive states like *Overcast*, *Sleet*, and *Downpour*).
 * **Always-On Display (AOD):** Clean, battery-safe minimalist AOD mode displaying hours, minutes, and date on a pure black AMOLED background.
